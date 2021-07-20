@@ -2,6 +2,15 @@ import React from 'react';
 import { Component } from 'react';
 
 class Nav extends Component{
+  // 상위 component의 state값이 바뀌면 하위 component 랜더링이 진행된다.
+  // 값이 변경되지 않았지만 랜더링 되는 상황이다!!
+  shouldComponentUpdate(newProps, newState){
+    if(this.props.data === newProps.data){
+      return false;
+    }
+    return true;
+  }
+
   render(){
     var lists = [];
     var data = this.props.data;
