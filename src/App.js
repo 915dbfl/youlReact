@@ -6,8 +6,8 @@ import ReadArticle from './components/ReadArticle';
 import Control from './components/Control';
 import './App.css';
 import CreateArticle from './components/CreateArticle';
+import UpdateArticle from './components/UpdateArticle';
 //해당 component.js를 import시키는 것은 loading을 하는 것이다.
-
 
 
 //자바 스크립트가 아닌 jsx 코드이다. create react app이 자바 스크립트로 convert
@@ -19,7 +19,7 @@ class App extends Component {
     this.max_content_id = 3;
     this.state = {
       selected_content_id: 2,
-      mode: 'create',
+      mode: 'welcome',
       welcome: {title: 'Welcome', desc: 'Hello, React!!!'},
       //Header의 값을 state화 시키는 것
       //Header의 property 값으로 객체를 줌.
@@ -34,25 +34,26 @@ class App extends Component {
     }
   }
   //자바스크립트 코드로써 실행되도록 하기 위해서는 {} 사용!
-  render(){
-    console.log('App render');
+  getReadContent(){
+    var i = 0;
+    while(i < this.state.contents.length){
+      var data= this.state.contents[i]
+      if(data.id === this.state.selected_content_id){
+        return data;
+      }
+      i = i + 1;
+    }
+  }
+
+  getContent(){
     var _title, _desc, _article = null;
-    if(this.state.mode === 'welcome'){
+    if(this.state.mode === 'welcome' || this.state.mode === 'delete'){
       _title = this.state.welcome.title;
       _desc = this.state.welcome.desc;
       _article = <ReadArticle title={_title} desc={_desc}></ReadArticle>
     }else if(this.state.mode === 'read'){
-      var i = 0;
-      while(i < this.state.contents.length){
-        var data= this.state.contents[i]
-        if(data.id === this.state.selected_content_id){
-          _title = data.title;
-          _desc = data.desc;
-          break;
-        }
-        i = i + 1;
-      }
-      _article = <ReadArticle title={_title} desc={_desc}></ReadArticle>
+      var _content = this.getReadContent();
+      _article = <ReadArticle title={_content.title} desc={_content.desc}></ReadArticle>
     }else if(this.state.mode === 'create'){
       _article = <CreateArticle onSubmit={function(_title, _desc){
         this.max_content_id = this.max_content_id + 1;
@@ -66,14 +67,41 @@ class App extends Component {
         //   id: this.max_content_id, title: _title, desc: _desc
         // });
         //기존 contents가 새로운 contents로 수정이 되는 방식
-        var _contents= this.state.contents.concat(
-          {id: this.max_content_id, title: _title, desc: _desc}
-        );
+        var _contents= Array.from(this.state.contents);
+        _contents.push({id: this.max_content_id, title: _title, desc: _desc});
+        // var _contents= this.state.contents.concat(
+        //   {id: this.max_content_id, title: _title, desc: _desc}
+        // );
         this.setState({
-          contents: _contents
+          contents: _contents,
+          mode: 'read',
+          selected_content_id: this.max_content_id
         });
       }.bind(this)}></CreateArticle>
+    }else if(this.state.mode === 'update'){
+      _content = this.getReadContent();
+      _article = <UpdateArticle data= {_content} onSubmit={function(_id, _title, _desc){
+        // 원본을 바꾸지 않는 방식으로 진행!!
+        var _contents = Array.from(this.state.contents);
+        var i = 0;
+        while(i < _contents.length){
+          if(_id === _contents[i].id){
+            _contents[i] = {id: _id, title: _title, desc: _desc};
+            break;
+          }
+          i = i + 1;
+        }
+        this.setState({
+          contents: _contents,
+          mode: 'read'
+        });
+      }.bind(this)}></UpdateArticle>
     }
+    return _article;
+  }
+
+  render(){
+    console.log('App render');
     return (
       <div className="App">
         <Header title= {this.state.Header.title} sub= {this.state.Header.sub}
@@ -93,11 +121,32 @@ class App extends Component {
           }.bind(this)}
         ></Nav>
         <Control onChangeMode={function(_mode){
-          this.setState({
-            mode: _mode
-          })
-        }.bind(this)}></Control>
-        {_article}
+          if(_mode === 'delete'){
+            if(window.confirm('really?')){
+              var _contents = Array.from(this.state.contents);
+              var i = 0;
+              while(i < _contents.length){
+                if(this.state.selected_content_id === _contents[i].id){
+                  _contents.splice(i, 1);
+                  break;
+                }
+                i = i + 1;
+              }
+              this.setState({
+                contents: _contents,
+                mode: 'welcome'
+              });
+              alert('deleted');
+            }
+          }else{
+            this.setState({
+              mode: _mode
+            })
+          }
+        }.bind(this)}
+
+        ></Control>
+        {this.getContent()}
       </div>
     );
   }
